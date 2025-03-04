@@ -249,8 +249,8 @@ pub fn move_to_workspace(app: &mut Application, n: u64) {
             move_resize_window(
                 app.core.display,
                 cc.window_id,
-                -(cc.w as i32),
-                -(cc.h as i32),
+                -((cc.w + cc.border * 2) as i32),
+                -((cc.h + cc.border * 2) as i32),
                 cc.w,
                 cc.h,
             );
@@ -583,12 +583,17 @@ pub fn update_desktops(app: &mut Application) {
         // 2. Create workspaces if needed
         if screen.workspaces.is_empty() {
             for i in 0..NUMBER_OF_DESKTOPS {
+                let mw = if index < app.config.desktops.splits.len() {
+                    app.config.desktops.splits[index][i]
+                } else {
+                    0.5
+                };
                 screen.workspaces.push(Workspace {
                     number: i as u64,
                     clients: Vec::new(),
                     current_client: None,
                     master_capacity: 1,
-                    master_width: 0.5,
+                    master_width: mw,
                 });
             }
         }
@@ -596,12 +601,12 @@ pub fn update_desktops(app: &mut Application) {
         // 3. Get names & geometry
         for i in 0..screen.workspaces.len() {
             if index < app.config.desktops.names.len() {
-                desktop_names_ewmh.push(format!("{}", app.config.desktops.names[index][i]));
+                desktop_names_ewmh.push(app.config.desktops.names[index][i].to_string());
             } else {
                 desktop_names_ewmh.push(format!("{}", i + 1));
             }
-            viewports.push(screen.x as i64);
-            viewports.push(screen.y as i64);
+            viewports.push(screen.x);
+            viewports.push(screen.y);
         }
     }
     // 4. SEt info

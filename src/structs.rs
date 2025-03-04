@@ -79,6 +79,7 @@ pub struct Color {
 pub struct DesktopsConfig {
     pub keysyms: [u32; NUMBER_OF_DESKTOPS],
     pub names: Vec<[String; NUMBER_OF_DESKTOPS]>,
+    pub splits: Vec<[f64; NUMBER_OF_DESKTOPS]>,
 }
 
 impl DesktopsConfig {
@@ -86,7 +87,14 @@ impl DesktopsConfig {
         DesktopsConfig {
             keysyms: [0; NUMBER_OF_DESKTOPS],
             names: vec![],
+            splits: vec![],
         }
+    }
+}
+
+impl Default for DesktopsConfig {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

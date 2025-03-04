@@ -134,19 +134,19 @@ pub fn manage_client(app: &mut Application, win: u64, scan: bool) {
     let screen = &app.runtime.screens[client_screen];
     if c.floating {
         if c.x > screen.width as i32 {
-            c.x = c.x % screen.x as i32;
+            c.x %= screen.x as i32;
         }
         if c.y > screen.height as i32 {
-            c.y = c.y % screen.y as i32;
+            c.y %= screen.y as i32;
         }
     }
 
     if c.x < screen.x as i32 {
-        c.x = screen.x as i32;
+        c.x += screen.x as i32;
     }
 
     if c.y < screen.y as i32 {
-        c.y = screen.y as i32;
+        c.y += screen.y as i32;
     }
 
     let workspace = &mut app.runtime.screens[client_screen].workspaces[client_workspace];
@@ -224,32 +224,30 @@ pub fn update_docks(app: &mut Application) {
         let dw = bar.w;
         let dh = bar.h;
         for screen in &mut app.runtime.screens {
-            if dx >= screen.x && dx < (screen.x + screen.width) {
-                if dy >= screen.y && dy < (screen.y + screen.height) {
-                    let mut ba = screen.bar_offsets;
-                    // Found corresponding screen
-                    if dw > dh {
-                        // dock is horizontal
-                        if dy == screen.y {
-                            // dock is on the top
-                            ba.up = dh;
-                        } else {
-                            // dock is on the bottom
-                            ba.down = dh;
-                        }
+            if dx >= screen.x && dx < (screen.x + screen.width) && dy >= screen.y && dy < (screen.y + screen.height) {
+                let mut ba = screen.bar_offsets;
+                // Found corresponding screen
+                if dw > dh {
+                    // dock is horizontal
+                    if dy == screen.y {
+                        // dock is on the top
+                        ba.up = dh;
                     } else {
-                        // dock is vertical
-                        if dx == screen.x {
-                            // dock is on the left
-                            ba.left = dw;
-                        } else {
-                            // dock is on the right
-                            ba.right = dw;
-                        }
+                        // dock is on the bottom
+                        ba.down = dh;
                     }
-                    screen.bar_offsets = ba;
-                    break;
+                } else {
+                    // dock is vertical
+                    if dx == screen.x {
+                        // dock is on the left
+                        ba.left = dw;
+                    } else {
+                        // dock is on the right
+                        ba.right = dw;
+                    }
                 }
+                screen.bar_offsets = ba;
+                break;
             }
         }
     }
@@ -320,15 +318,12 @@ pub fn unmanage_window(app: &mut Application, win: u64) {
             show_workspace(app, s, w);
         }
         update_client_list(app);
-    } else {
-        if app
-            .runtime
-            .bars
-            .iter()
-            .find(|b| b.window_id == win)
-            .is_some()
-        {
-            detach_dock(app, win);
-        }
+    } else if app
+        .runtime
+        .bars
+        .iter()
+        .any(|b| b.window_id == win)
+    {
+        detach_dock(app, win);
     }
 }
