@@ -240,6 +240,11 @@ pub fn config() -> Configuration {
     desktops.keysyms = [XK_1, XK_2, XK_3, XK_4, XK_5, XK_6, XK_7, XK_8, XK_9, XK_0];
     desktops.names =
         vec![["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"].map(|s| s.to_string())];
+    // desktops.splits is a vector of arrays of NUMBER_OF_DESKTOPS float numbers where
+    // each array corresponds to screen and each float corresponds to split on workspace
+    // so: desktops.splits[screen index][workspace index] = split width
+    // desktops.splits = vec![[0.5; NUMBER_OF_DESKTOPS]]
+    // desktops.splits[0][0] = 0.8;
 
     for (i, k) in desktops.keysyms.iter().enumerate() {
         key_actions.push(KeyAction {
