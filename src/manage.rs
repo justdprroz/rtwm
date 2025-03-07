@@ -11,6 +11,7 @@ use x11::xlib::SubstructureNotifyMask;
 use x11::xlib::XWindowAttributes;
 use x11::xlib::XA_WINDOW;
 
+use crate::arrange::*;
 use crate::config;
 use crate::helper::*;
 use crate::logic::*;

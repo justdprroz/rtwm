@@ -217,6 +217,11 @@ pub fn config() -> Configuration {
             result: UpdateMasterWidth(-0.05),
         },
         KeyAction {
+            modifier: ModKey | ShiftMask | ControlMask,
+            keysym: XK_Return,
+            result: RotateStack,
+        },
+        KeyAction {
             modifier: ModKey | ShiftMask,
             keysym: XK_space,
             result: ToggleFloat,

@@ -47,19 +47,24 @@ pub struct KeyAction {
 
 #[derive(Debug, Clone)]
 pub enum ActionResult {
+    // Global management
     KillClient,
     Spawn(Vec<CString>),
-    MoveToScreen(ScreenSwitching),
-    FocusOnScreen(ScreenSwitching),
-    UpdateMasterCapacity(i64),
-    UpdateMasterWidth(f64),
-    MoveToWorkspace(u64),
-    FocusOnWorkspace(u64),
-    CycleStack(i64),
-    PopPushStack,
-    ToggleFloat,
     DumpInfo,
     Quit,
+    // Screen management
+    MoveToScreen(ScreenSwitching),
+    FocusOnScreen(ScreenSwitching),
+    // Current layout management
+    UpdateMasterCapacity(i64),
+    UpdateMasterWidth(f64),
+    CycleStack(i64),// Simply moves focus
+    RotateStack,  // Pops and pushes LAST window
+    PopPushStack,   // Pops and pushes CURRENT window
+    ToggleFloat,
+    // Workspace management
+    MoveToWorkspace(u64),
+    FocusOnWorkspace(u64),
 }
 
 #[derive(Debug, Clone, Copy)]

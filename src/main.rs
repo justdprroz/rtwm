@@ -6,6 +6,7 @@
 //! - Stack layout
 //! - Shortcuts
 
+pub mod actions;
 pub mod config;
 pub mod events;
 pub mod helper;
@@ -16,6 +17,7 @@ pub mod setup;
 pub mod structs;
 pub mod utils;
 pub mod wrapper;
+pub mod arrange;
 
 use std::path::Path;
 

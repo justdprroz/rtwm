@@ -1,5 +1,6 @@
 //! Code for setting up WM. Intented to be ran once
 
+use crate::actions::focus_on_workspace;
 use crate::config::*;
 use crate::manage::*;
 use crate::structs::*;

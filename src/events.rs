@@ -1,14 +1,23 @@
 //! Functions ran for events
 
-use std::borrow::Borrow;
+use crate::actions::*;
+use crate::arrange::*;
+use crate::helper::*;
+use crate::logic::*;
+use crate::manage::*;
+use crate::mouse::*;
+use crate::structs::*;
+use crate::utils::*;
+use crate::wrapper::xlib::*;
 
+use x11::xlib::Button1;
 use x11::xlib::Button3;
 use x11::xlib::CWBorderWidth;
 use x11::xlib::CWHeight;
 use x11::xlib::CWWidth;
-use x11::xlib::CurrentTime;
+use x11::xlib::NotifyInferior;
+use x11::xlib::NotifyNormal;
 use x11::xlib::PropModeReplace;
-use x11::xlib::RevertToPointerRoot;
 use x11::xlib::XButtonEvent;
 use x11::xlib::XClientMessageEvent;
 use x11::xlib::XConfigureEvent;
@@ -25,16 +34,6 @@ use x11::xlib::XWindowChanges;
 use x11::xlib::CWX;
 use x11::xlib::CWY;
 use x11::xlib::XA_ATOM;
-
-use crate::helper::*;
-use crate::logic::*;
-use crate::manage::*;
-use crate::mouse::*;
-use crate::structs::*;
-use crate::utils::*;
-use crate::wrapper::xlib::*;
-
-use x11::xlib::Button1;
 
 pub fn key_press(app: &mut Application, key_event: XKeyEvent) {
     // Iterate over key actions matching current key input
@@ -77,9 +76,14 @@ pub fn key_press(app: &mut Application, key_event: XKeyEvent) {
                 ActionResult::ToggleFloat => {
                     toggle_float(app);
                 }
-                ActionResult::CycleStack(_i) => {}
+                ActionResult::CycleStack(d) => {
+                    cycle_stack(app, *d);
+                }
                 ActionResult::PopPushStack => {
-                    move_to_workspace(app, app.runtime.current_workspace as u64);
+                    pop_push_stack(app, true);
+                }
+                ActionResult::RotateStack => {
+                    pop_push_stack(app, false);
                 }
             }
         }
@@ -96,31 +100,26 @@ pub fn enter_notify(app: &mut Application, crossing_event: XCrossingEvent) {
     let ew: u64 = crossing_event.window;
     log!("|- Crossed Window `{}` ({})", get_client_name(app, ew), ew);
     if ew != app.core.root_win {
-        log!("   |- Setting focus to window");
-        // Focus on crossed window
+        if crossing_event.mode != NotifyNormal || crossing_event.detail == NotifyInferior {
+            return;
+        }
+        if find_window_indexes(app, ew).is_none() {
+            return;
+        }
         if let Some(cw) = get_current_client_id(app) {
             unfocus(app, cw);
         }
+        log!("   |- Setting focus to window");
         focus(app, ew);
     } else {
-        let ws = &mut app.runtime;
-
-        if ws.screens[ws.current_screen].workspaces[ws.current_workspace]
-            .clients
-            .is_empty()
-        {
-            set_input_focus(
-                app.core.display,
-                app.core.root_win,
-                RevertToPointerRoot,
-                CurrentTime,
-            );
-            delete_property(
-                app.core.display,
-                app.core.root_win,
-                app.atoms.net_active_window,
-            );
-        }
+        //log!("Hehe, fuck you");
+        //if let Some(cw) = get_current_client_id(app) {
+        //    unfocus(app, cw);
+        //}
+        //let ws = &mut app.runtime;
+        //ws.current_client = None;
+        //ws.screens[ws.current_screen].workspaces[ws.current_workspace].current_client = ws.current_client;
+        //update_active_window(app);
     }
 }
 
@@ -133,7 +132,7 @@ pub fn destroy_notify(app: &mut Application, destroy_notify_event: XDestroyWindo
 pub fn unmap_notify(app: &mut Application, unmap_event: XUnmapEvent) {
     let ew: u64 = unmap_event.window;
     log!("|- `{}` ({}) unmapped", get_client_name(app, ew), ew);
-    if let Some(_) = find_window_indexes(app, ew) {
+    if find_window_indexes(app, ew).is_some() {
         if unmap_event.send_event == 1 {
             let data: [i64; 2] = [0, 0];
             change_property(
@@ -286,7 +285,7 @@ pub fn configure_request(app: &mut Application, conf_req_event: XConfigureReques
 
         let sw = app.runtime.screens[s].width as i32;
         let sh = app.runtime.screens[s].height as i32;
-        let ba = app.runtime.screens[s].bar_offsets;
+        let _ba = app.runtime.screens[s].bar_offsets;
         let client = &mut app.runtime.screens[s].workspaces[w].clients[c];
         // let mut resized = false;
 
@@ -340,7 +339,7 @@ pub fn configure_request(app: &mut Application, conf_req_event: XConfigureReques
             // client.y = (sh - (ba.up as i32) - (client.h as i32)) / 2 + sy;
 
             if (conf_req_event.value_mask & (CWX | CWY) as u64) != 0
-                && !((conf_req_event.value_mask & (CWWidth | CWHeight) as u64) != 0)
+                && ((conf_req_event.value_mask & (CWWidth | CWHeight) as u64) == 0)
             {
                 configure(app.core.display, client);
             }
