@@ -63,6 +63,7 @@ pub fn shift_current_client(
         // update secondary tracker
         ws.current_client = ws.screens[screen].workspaces[workspace].current_client;
         if let Some(index) = ws.current_client {
+            log!("|=  SETTING INPUT FOCUS");
             let win = ws.screens[screen].workspaces[workspace].clients[index].window_id;
             set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
         }
@@ -113,6 +114,7 @@ pub fn focus(app: &mut Application, win: u64) {
     grab_button(app.core.display, win, Button3, ModKey);
 
     // Update focus on window
+    log!("SETTING FOCUS ON {}",win);
     set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
     send_atom(app, win, app.atoms.wm_take_focus); 
 
@@ -317,22 +319,12 @@ pub fn get_window_placement(app: &mut Application, win: u64, scan: bool) -> ((us
     }
 
     // Try permanent rules
-    let title = match get_text_property(app.core.display, win, app.atoms.net_wm_name) {
-        Some(name) => Some(name),
-        None => None,
-    };
+    let title = get_text_property(app.core.display, win, app.atoms.net_wm_name);
 
     let (instance, class) = {
-        let mut ch: x11::xlib::XClassHint = x11::xlib::XClassHint {
-            res_name: std::ptr::null_mut(),
-            res_class: std::ptr::null_mut(),
-        };
+        let mut ch = ClassHint::default();
         get_class_hint(app.core.display, win, &mut ch);
-
-        let instance = cstr_to_string(ch.res_name as *const i8);
-        let class = cstr_to_string(ch.res_class as *const i8);
-
-        (instance, class)
+        (ch.res_name, ch.res_class)
     };
 
     for rule in &app.config.placements {
@@ -373,5 +365,5 @@ pub fn get_window_placement(app: &mut Application, win: u64, scan: bool) -> ((us
     }
 
     // Use current placement if nothing found;
-    return (default_placement, 0);
+    (default_placement, 0)
 }

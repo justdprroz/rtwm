@@ -95,10 +95,14 @@ pub fn arrange_workspace(app: &mut Application, screen: usize, workspace: usize)
     }
 }
 
+//pub fn tiled(app: &mut Application) {
+//
+//}
+
 /// Arrange windows of current workspace in specified layout
 /// 1. Iterate over all screens
 /// 2. Arrange current workspace
-pub fn arrange_current(app: &mut Application) {
+pub fn arrange_visible(app: &mut Application) {
     log!("   |- Arranging...");
     // 1. Iterate over all screens
     let screens_amount = app.runtime.screens.len();

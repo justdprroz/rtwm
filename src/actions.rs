@@ -83,7 +83,7 @@ pub fn move_to_screen(app: &mut Application, d: ScreenSwitching) {
             .push(client);
 
         // Arrange all monitors
-        arrange_current(app);
+        arrange_visible(app);
         show_workspace(
             app,
             new_screen_index,
@@ -132,7 +132,7 @@ pub fn move_to_workspace(app: &mut Application, n: u64) {
             update_client_desktop(app, cc.window_id, cur_workspace as u64);
 
             // Update current workspace layout
-            arrange_current(app);
+            arrange_visible(app);
             show_workspace(
                 app,
                 app.runtime.current_screen,
@@ -215,7 +215,7 @@ pub fn pop_push_stack(app: &mut Application, current: bool) {
     app.runtime.screens[app.runtime.current_screen].workspaces[workspace_index]
         .clients
         .push(cc);
-    arrange_current(app);
+    arrange_visible(app);
     show_workspace(
         app,
         app.runtime.current_screen,
@@ -287,7 +287,7 @@ pub fn update_master_width(app: &mut Application, w: f64) {
         *mw += w;
     }
     // Rearrange windows
-    arrange_current(app);
+    arrange_visible(app);
     show_workspace(
         app,
         app.runtime.current_screen,
@@ -301,7 +301,7 @@ pub fn update_master_capacity(app: &mut Application, i: i64) {
     app.runtime.screens[app.runtime.current_screen].workspaces[app.runtime.current_workspace]
         .master_capacity += i;
     // Rearrange windows
-    arrange_current(app);
+    arrange_visible(app);
     show_workspace(
         app,
         app.runtime.current_screen,
@@ -323,7 +323,7 @@ pub fn toggle_float(app: &mut Application) {
             0
         };
 
-        arrange_current(app);
+        arrange_visible(app);
         show_workspace(
             app,
             app.runtime.current_screen,
@@ -351,6 +351,7 @@ pub fn focus_on_screen_index(app: &mut Application, n: usize) {
             [app.runtime.current_workspace]
             .clients[index]
             .window_id;
+        log!("SETTING INPUT FOCUS");
         set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
     }
     update_active_window(app);

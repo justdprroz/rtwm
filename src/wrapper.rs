@@ -1,7 +1,5 @@
 //! \*Safe\* wrap for x11
 
-// #![allow(dead_code)]
-
 pub mod sys {
     pub fn set_locale(c: i32, l: &str) {
         unsafe {
@@ -198,6 +196,7 @@ pub mod xlib {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_simple_window(
         display: &mut x11::xlib::Display,
         parent: u64,
@@ -238,6 +237,7 @@ pub mod xlib {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_window(
         display: &mut x11::xlib::Display,
         parent: u64,
@@ -551,58 +551,6 @@ pub mod xlib {
         }
     }
 
-    pub enum EEvent {
-        KeyPress {
-            key: x11::xlib::XKeyEvent,
-        },
-        KeyRelease {
-            key: x11::xlib::XKeyEvent,
-        },
-        ButtonPress {
-            button: x11::xlib::XButtonEvent,
-            motion: x11::xlib::XMotionEvent,
-        },
-        ButtonRelease {
-            button: x11::xlib::XButtonEvent,
-            motion: x11::xlib::XMotionEvent,
-        },
-        MotionNotify {
-            button: x11::xlib::XButtonEvent,
-            motion: x11::xlib::XMotionEvent,
-        },
-        MapRequest {
-            map_request_event: x11::xlib::XMapRequestEvent,
-        },
-        EnterNotify {
-            crossing: x11::xlib::XCrossingEvent,
-        },
-        LeaveNotify {
-            crossing: x11::xlib::XCrossingEvent,
-        },
-        DestroyNotify {
-            destroy_window: x11::xlib::XDestroyWindowEvent,
-        },
-        UnmapNotify {
-            unmap: x11::xlib::XUnmapEvent,
-        },
-        PropertyNotify {
-            property: x11::xlib::XPropertyEvent,
-        },
-        ConfigureNotify {
-            configure: x11::xlib::XConfigureEvent,
-        },
-        ClientMessage {
-            client_message_event: x11::xlib::XClientMessageEvent,
-        },
-        ConfigureRequest {
-            configure_request_event: x11::xlib::XConfigureRequestEvent,
-        },
-        Unmanaged {
-            type_: i32,
-            name: &'static str,
-        },
-    }
-
     pub fn get_wm_normal_hints(
         display: &mut x11::xlib::Display,
         w: u64,
@@ -699,6 +647,7 @@ pub mod xlib {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn change_property(
         display: &mut x11::xlib::Display,
         w: u64,
@@ -782,6 +731,7 @@ pub mod xlib {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn get_window_property(
         dpy: &mut x11::xlib::Display,
         win: u64,
@@ -817,15 +767,98 @@ pub mod xlib {
     pub fn get_class_hint(
         dpy: &mut x11::xlib::Display,
         win: u64,
-        class_hint_return: &mut x11::xlib::XClassHint,
+        class_hint_return: &mut ClassHint,
     ) -> i32 {
-        unsafe {
+        let mut dummy_class_hint: x11::xlib::XClassHint = x11::xlib::XClassHint {
+            res_name: std::ptr::null_mut(),
+            res_class: std::ptr::null_mut(),
+        };
+        let status = unsafe {
             x11::xlib::XGetClassHint(
                 dpy as *mut x11::xlib::Display,
                 win,
-                class_hint_return as *mut x11::xlib::XClassHint,
+                &mut dummy_class_hint as *mut x11::xlib::XClassHint,
             )
+        };
+        unsafe {
+            class_hint_return.res_name = if dummy_class_hint.res_name.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(dummy_class_hint.res_name)
+                        .to_string_lossy()
+                        .into_owned(),
+                )
+            };
+            class_hint_return.res_class = if dummy_class_hint.res_class.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(dummy_class_hint.res_class)
+                        .to_string_lossy()
+                        .into_owned(),
+                )
+            };
         }
+        status
+    }
+
+    pub enum EEvent {
+        KeyPress {
+            key: x11::xlib::XKeyEvent,
+        },
+        KeyRelease {
+            key: x11::xlib::XKeyEvent,
+        },
+        ButtonPress {
+            button: x11::xlib::XButtonEvent,
+            motion: x11::xlib::XMotionEvent,
+        },
+        ButtonRelease {
+            button: x11::xlib::XButtonEvent,
+            motion: x11::xlib::XMotionEvent,
+        },
+        MotionNotify {
+            button: x11::xlib::XButtonEvent,
+            motion: x11::xlib::XMotionEvent,
+        },
+        MapRequest {
+            map_request_event: x11::xlib::XMapRequestEvent,
+        },
+        EnterNotify {
+            crossing: x11::xlib::XCrossingEvent,
+        },
+        LeaveNotify {
+            crossing: x11::xlib::XCrossingEvent,
+        },
+        DestroyNotify {
+            destroy_window: x11::xlib::XDestroyWindowEvent,
+        },
+        UnmapNotify {
+            unmap: x11::xlib::XUnmapEvent,
+        },
+        PropertyNotify {
+            property: x11::xlib::XPropertyEvent,
+        },
+        ConfigureNotify {
+            configure: x11::xlib::XConfigureEvent,
+        },
+        ClientMessage {
+            client_message_event: x11::xlib::XClientMessageEvent,
+        },
+        ConfigureRequest {
+            configure_request_event: x11::xlib::XConfigureRequestEvent,
+        },
+        Unmanaged {
+            type_: i32,
+            name: &'static str,
+        },
+    }
+
+    #[derive(Default)]
+    pub struct ClassHint {
+        pub res_name: Option<String>,
+        pub res_class: Option<String>,
     }
 }
 

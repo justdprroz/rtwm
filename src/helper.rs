@@ -78,6 +78,7 @@ pub fn update_active_window(app: &mut Application) {
         //if ws.screens[ws.current_screen].workspaces[ws.current_workspace]
         //.clients
         //.is_empty()
+        log!("SETTING INPUT FOCUS");
         set_input_focus(
             app.core.display,
             app.core.root_win,

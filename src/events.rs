@@ -244,7 +244,7 @@ pub fn client_message(app: &mut Application, client_event: XClientMessageEvent) 
                     cc.h = cc.oh;
                     cc.fullscreen = false;
                 }
-                arrange_current(app);
+                arrange_visible(app);
                 show_workspace(
                     app,
                     app.runtime.current_screen,

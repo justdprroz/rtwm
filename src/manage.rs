@@ -95,6 +95,14 @@ pub fn manage_client(app: &mut Application, win: u64, scan: bool) {
     let state = get_atom_prop(app, win, app.atoms.net_wm_state);
     let wtype = get_atom_prop(app, win, app.atoms.net_wm_window_type);
 
+    let (instance, class) = {
+        let mut ch = ClassHint::default();
+        get_class_hint(app.core.display, win, &mut ch);
+        (ch.res_name, ch.res_class)
+    };
+
+    log!("Found: {:?}, {:?}", instance, class);
+
     // 10. Get window workspace
     let ((client_screen, client_workspace), trans) = get_window_placement(app, win, scan);
 
@@ -225,7 +233,11 @@ pub fn update_docks(app: &mut Application) {
         let dw = bar.w;
         let dh = bar.h;
         for screen in &mut app.runtime.screens {
-            if dx >= screen.x && dx < (screen.x + screen.width) && dy >= screen.y && dy < (screen.y + screen.height) {
+            if dx >= screen.x
+                && dx < (screen.x + screen.width)
+                && dy >= screen.y
+                && dy < (screen.y + screen.height)
+            {
                 let mut ba = screen.bar_offsets;
                 // Found corresponding screen
                 if dw > dh {
@@ -319,12 +331,7 @@ pub fn unmanage_window(app: &mut Application, win: u64) {
             show_workspace(app, s, w);
         }
         update_client_list(app);
-    } else if app
-        .runtime
-        .bars
-        .iter()
-        .any(|b| b.window_id == win)
-    {
+    } else if app.runtime.bars.iter().any(|b| b.window_id == win) {
         detach_dock(app, win);
     }
 }
