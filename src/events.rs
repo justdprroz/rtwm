@@ -39,7 +39,7 @@ pub fn key_press(app: &mut Application, key_event: XKeyEvent) {
     // Iterate over key actions matching current key input
     for action in app.config.key_actions.clone() {
         if key_event.keycode == keysym_to_keycode(app.core.display, action.keysym)
-            && key_event.state == action.modifier
+            && match_modifier(key_event.state, action.modifier)
         {
             // Match action result and run related function
             match &action.result {

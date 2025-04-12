@@ -16,6 +16,7 @@ use x11::xlib::CWEventMask;
 use x11::xlib::EnterWindowMask;
 use x11::xlib::IsViewable;
 use x11::xlib::LeaveWindowMask;
+use x11::xlib::LockMask;
 use x11::xlib::PointerMotionMask;
 use x11::xlib::PropModeReplace;
 use x11::xlib::PropertyChangeMask;
@@ -212,7 +213,9 @@ pub fn init_wm_check(app: &mut Application) {
 /// Grab keys used by actions
 pub fn init_actions(app: &mut Application) {
     for action in app.config.key_actions.iter() {
-        grab_key(app.core.display, action.keysym, action.modifier);
+        for second_mod in [0, LockMask] {
+            grab_key(app.core.display, action.keysym, action.modifier | second_mod);
+        }
     }
 }
 

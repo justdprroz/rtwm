@@ -14,13 +14,21 @@ use x11::xlib::CWBorderWidth;
 use x11::xlib::CWHeight;
 use x11::xlib::CWWidth;
 use x11::xlib::ClientMessage;
+use x11::xlib::ControlMask;
 use x11::xlib::CurrentTime;
 use x11::xlib::EnterWindowMask;
+use x11::xlib::LockMask;
+use x11::xlib::Mod1Mask;
+use x11::xlib::Mod2Mask;
+use x11::xlib::Mod3Mask;
+use x11::xlib::Mod4Mask;
+use x11::xlib::Mod5Mask;
 use x11::xlib::NoEventMask;
 use x11::xlib::PMaxSize;
 use x11::xlib::PMinSize;
 use x11::xlib::PropModeAppend;
 use x11::xlib::RevertToPointerRoot;
+use x11::xlib::ShiftMask;
 use x11::xlib::StructureNotifyMask;
 use x11::xlib::Success;
 use x11::xlib::XCheckMaskEvent;
@@ -518,4 +526,10 @@ pub fn suppress_notify(app: &mut Application) {
             log!("===Ignoring EnterEvent");
         }
     }
+}
+
+pub fn match_modifier(mod1: u32, mod2: u32) -> bool {
+    let masked1 = mod1 & !LockMask & (ShiftMask | ControlMask | Mod1Mask | Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask);
+    let masked2 = mod2 & !LockMask & (ShiftMask | ControlMask | Mod1Mask | Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask);
+    masked1 == masked2
 }
