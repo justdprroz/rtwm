@@ -160,23 +160,20 @@ pub fn resize_mouse(app: &mut Application, motion_event: XMotionEvent) {
         let client = &mut screen.workspaces[w].clients[c];
         let mut nw = client.w as i32;
         let mut nh = client.h as i32;
-        if (nw + dx as i32) > client.minw && (client.maxw == 0 || client.maxw > 0 && (nw + dx as i32) < client.maxw) {
+        if (nw + dx as i32) > client.minw
+            && (client.maxw == 0 || client.maxw > 0 && (nw + dx as i32) < client.maxw)
+        {
             nw += dx as i32;
         };
-        if (nh + dy as i32) > client.minh && (client.maxh == 0 || client.maxh > 0 && (nh + dy as i32) < client.maxh) {
+        if (nh + dy as i32) > client.minh
+            && (client.maxh == 0 || client.maxh > 0 && (nh + dy as i32) < client.maxh)
+        {
             nh += dy as i32;
         }
         client.w = nw as u32;
         client.h = nh as u32;
 
-        move_resize_window(
-            app.core.display,
-            mw,
-            client.x,
-            client.y,
-            client.w,
-            client.h,
-        );
+        move_resize_window(app.core.display, mw, client.x, client.y, client.w, client.h);
     }
 }
 

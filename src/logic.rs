@@ -114,9 +114,9 @@ pub fn focus(app: &mut Application, win: u64) {
     grab_button(app.core.display, win, Button3, ModKey);
 
     // Update focus on window
-    log!("SETTING FOCUS ON {}",win);
+    log!("SETTING FOCUS ON {}", win);
     set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
-    send_atom(app, win, app.atoms.wm_take_focus); 
+    send_atom(app, win, app.atoms.wm_take_focus);
 
     // Update workspace to new one
     let w = app.runtime.current_workspace + app.runtime.current_screen * NUMBER_OF_DESKTOPS;

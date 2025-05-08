@@ -5,6 +5,7 @@ use std::mem::size_of;
 use std::ptr::null_mut;
 
 use crate::config;
+use crate::config::FOCUS_IGNORES_GEOMETRY;
 use crate::structs::*;
 use crate::utils::*;
 use crate::wrapper::xlib::*;
@@ -501,10 +502,7 @@ pub fn set_urgent(app: &mut Application, win: u64, urg: bool) {
     };
 }
 
-pub fn resize_client(
-    dpy: &mut x11::xlib::Display,
-    client: &mut Client,
-) {
+pub fn resize_client(dpy: &mut x11::xlib::Display, client: &mut Client) {
     let mut wc: XWindowChanges = XWindowChanges {
         x: client.x,
         y: client.y,
@@ -514,11 +512,19 @@ pub fn resize_client(
         sibling: 0,
         stack_mode: 0,
     };
-    configure_window(dpy, client.window_id, (CWX | CWY | CWWidth | CWHeight | CWBorderWidth) as u32, &mut wc);
+    configure_window(
+        dpy,
+        client.window_id,
+        (CWX | CWY | CWWidth | CWHeight | CWBorderWidth) as u32,
+        &mut wc,
+    );
     configure(dpy, client);
 }
 
 pub fn suppress_notify(app: &mut Application) {
+    if !FOCUS_IGNORES_GEOMETRY {
+        return;
+    }
     unsafe {
         XSync(app.core.display, 0);
         let mut ev = XEvent { type_: 0 };
@@ -529,7 +535,11 @@ pub fn suppress_notify(app: &mut Application) {
 }
 
 pub fn match_modifier(mod1: u32, mod2: u32) -> bool {
-    let masked1 = mod1 & !LockMask & (ShiftMask | ControlMask | Mod1Mask | Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask);
-    let masked2 = mod2 & !LockMask & (ShiftMask | ControlMask | Mod1Mask | Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask);
+    let masked1 = mod1
+        & !LockMask
+        & (ShiftMask | ControlMask | Mod1Mask | Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask);
+    let masked2 = mod2
+        & !LockMask
+        & (ShiftMask | ControlMask | Mod1Mask | Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask);
     masked1 == masked2
 }

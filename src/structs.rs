@@ -58,9 +58,9 @@ pub enum ActionResult {
     // Current layout management
     UpdateMasterCapacity(i64),
     UpdateMasterWidth(f64),
-    CycleStack(i64),// Simply moves focus
-    RotateStack,  // Pops and pushes LAST window
-    PopPushStack,   // Pops and pushes CURRENT window
+    CycleStack(i64), // Simply moves focus
+    RotateStack,     // Pops and pushes LAST window
+    PopPushStack,    // Pops and pushes CURRENT window
     ToggleFloat,
     // Workspace management
     MoveToWorkspace(u64),

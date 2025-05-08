@@ -16,8 +16,12 @@ use x11::keysym::*;
 use x11::xlib::Mod4Mask as ModKey;
 use x11::xlib::ShiftMask;
 
-// Amount on desktops on each screen
-pub const NUMBER_OF_DESKTOPS: usize = 10;
+//-----------------------------------------------------------------------
+//                          General rules
+//-----------------------------------------------------------------------
+
+pub const NUMBER_OF_DESKTOPS: usize = 11;
+pub const FOCUS_IGNORES_GEOMETRY: bool = true;
 
 /// Function for cunfiguring everything(actually not everything) you need
 pub fn config() -> Configuration {
@@ -42,13 +46,7 @@ pub fn config() -> Configuration {
     // Macro for creating array of strings used by nix's execvp function
     macro_rules! CMD {
         ( $( $e:expr ),* ) => {
-            {
-                let mut temp_vec = Vec::new();
-                $(
-                    temp_vec.push(CString::new($e).unwrap());
-                )*
-                temp_vec
-            }
+            vec![$( CString::new($e).unwrap() ),*]
         };
     }
 
@@ -60,21 +58,9 @@ pub fn config() -> Configuration {
         rule_workspace: Option<usize>,
     ) -> PlacementRule {
         PlacementRule {
-            instance: if let Some(s) = instance {
-                Some(s.into())
-            } else {
-                None
-            },
-            class: if let Some(s) = class {
-                Some(s.into())
-            } else {
-                None
-            },
-            title: (if let Some(s) = title {
-                Some(s.into())
-            } else {
-                None
-            }),
+            instance: instance.map(|s| s.into()),
+            class: class.map(|s| s.into()),
+            title: title.map(|s| s.into()),
             rule_screen,
             rule_workspace,
         }
@@ -242,14 +228,17 @@ pub fn config() -> Configuration {
     //                          Desktops Setup
     //-----------------------------------------------------------------------
     let mut desktops = DesktopsConfig::new();
+
     desktops.keysyms = [XK_1, XK_2, XK_3, XK_4, XK_5, XK_6, XK_7, XK_8, XK_9, XK_0];
+
     desktops.names =
         vec![["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"].map(|s| s.to_string())];
+
     // desktops.splits is a vector of arrays of NUMBER_OF_DESKTOPS float numbers where
     // each array corresponds to screen and each float corresponds to split on workspace
     // so: desktops.splits[screen index][workspace index] = split width
-    // desktops.splits = vec![[0.5; NUMBER_OF_DESKTOPS]]
-    // desktops.splits[0][0] = 0.8;
+    desktops.splits = vec![[0.5; NUMBER_OF_DESKTOPS]]
+    desktops.splits[0][0] = 0.7;
 
     for (i, k) in desktops.keysyms.iter().enumerate() {
         key_actions.push(KeyAction {

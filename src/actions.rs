@@ -162,10 +162,9 @@ pub fn move_to_workspace(app: &mut Application, n: u64) {
 }
 
 pub fn cycle_stack(app: &mut Application, d: i64) {
-    let ws = &mut app.runtime.screens[app.runtime.current_screen].workspaces[app.runtime.current_workspace];
-    let num_clients = ws
-        .clients
-        .len();
+    let ws = &mut app.runtime.screens[app.runtime.current_screen].workspaces
+        [app.runtime.current_workspace];
+    let num_clients = ws.clients.len();
 
     let cur_index = if num_clients < 2 {
         return;
@@ -177,13 +176,11 @@ pub fn cycle_stack(app: &mut Application, d: i64) {
     };
     let new_index = (((num_clients + cur_index) as i64 + d) % num_clients as i64) as usize;
 
-
     let old_win = ws.clients[cur_index].window_id;
     let new_win = ws.clients[new_index].window_id;
-    
+
     unfocus(app, old_win);
     focus(app, new_win);
-    
 }
 
 pub fn pop_push_stack(app: &mut Application, current: bool) {
@@ -207,23 +204,26 @@ pub fn pop_push_stack(app: &mut Application, current: bool) {
     };
 
     // Universal logic
-    let workspace_index = app.runtime.current_workspace;
-    let cc = app.runtime.screens[app.runtime.current_screen].workspaces
-        [app.runtime.current_workspace]
-        .clients
-        .remove(client_index);
-    app.runtime.screens[app.runtime.current_screen].workspaces[workspace_index]
-        .clients
-        .push(cc);
+    let workspace = &mut app.runtime.screens[app.runtime.current_screen].workspaces
+        [app.runtime.current_workspace];
+
+    // Pop client (current or bottom)
+    let popped_client = workspace.clients.remove(client_index);
+
+    // Place on top of stack (upper left)
+    workspace.clients.push(popped_client);
+
+    // Update tracking
+    workspace.current_client = Some(workspace.clients.len() - 1);
+    app.runtime.current_client = workspace.current_client;
+
     arrange_visible(app);
     show_workspace(
         app,
         app.runtime.current_screen,
         app.runtime.current_workspace,
     );
-    app.runtime.screens[app.runtime.current_screen].workspaces[workspace_index].current_client =
-        Some(0);
-    app.runtime.current_client = Some(0);
+
     suppress_notify(app);
 }
 
@@ -276,6 +276,8 @@ pub fn focus_on_workspace(app: &mut Application, n: u64, r: bool) {
         // Hide current workspace
         hide_workspace(app, app.runtime.current_screen, pw);
     }
+
+    suppress_notify(app);
 }
 
 pub fn update_master_width(app: &mut Application, w: f64) {

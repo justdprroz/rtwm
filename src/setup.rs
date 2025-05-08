@@ -214,7 +214,11 @@ pub fn init_wm_check(app: &mut Application) {
 pub fn init_actions(app: &mut Application) {
     for action in app.config.key_actions.iter() {
         for second_mod in [0, LockMask] {
-            grab_key(app.core.display, action.keysym, action.modifier | second_mod);
+            grab_key(
+                app.core.display,
+                action.keysym,
+                action.modifier | second_mod,
+            );
         }
     }
 }
