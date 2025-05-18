@@ -20,20 +20,16 @@ use x11::xlib::PropModeReplace;
 use x11::xlib::RevertToPointerRoot;
 use x11::xlib::XA_CARDINAL;
 /// Shifts current client tracker after destroying clients
-pub fn shift_current_client(
-    app: &mut Application,
-    screen: Option<usize>,
-    workspace: Option<usize>,
-) {
-    let screen = match screen {
-        Some(index) => index,
-        None => app.runtime.current_screen,
-    };
-
-    let workspace = match workspace {
-        Some(index) => index,
-        None => app.runtime.current_workspace,
-    };
+pub fn shift_current_client(app: &mut Application, screen: usize, workspace: usize) {
+    // let screen = match screen {
+    //     Some(index) => index,
+    //     None => app.runtime.current_screen,
+    // };
+    //
+    // let workspace = match workspace {
+    //     Some(index) => index,
+    //     None => app.runtime.current_workspace,
+    // };
 
     let ws = &mut app.runtime;
     // Find next client
@@ -65,7 +61,8 @@ pub fn shift_current_client(
         if let Some(index) = ws.current_client {
             log!("|=  SETTING INPUT FOCUS");
             let win = ws.screens[screen].workspaces[workspace].clients[index].window_id;
-            set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
+            // set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
+            focus(app, win);
         }
         update_active_window(app);
     }

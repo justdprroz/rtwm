@@ -52,7 +52,7 @@ pub fn move_mouse(app: &mut Application, motion_event: XMotionEvent) {
             );
 
             // Update client tracker on current screen
-            shift_current_client(app, None, None);
+            shift_current_client(app, app.runtime.current_screen, app.runtime.current_workspace);
 
             // Add window to stack of another display
             let nw = app.runtime.screens[new_screen].current_workspace;

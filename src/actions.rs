@@ -1,7 +1,5 @@
-use x11::xlib::CurrentTime;
 use x11::xlib::DestroyAll;
 use x11::xlib::PropModeReplace;
-use x11::xlib::RevertToPointerRoot;
 use x11::xlib::XA_CARDINAL;
 
 use crate::arrange::*;
@@ -73,14 +71,27 @@ pub fn move_to_screen(app: &mut Application, d: ScreenSwitching) {
             client.y = new_screen.y as i32 + rel_y;
         }
 
+        // Update client trackers on NEW workspace
+
         // Update client tracker on current screen
-        shift_current_client(app, None, None);
+        shift_current_client(
+            app,
+            app.runtime.current_screen,
+            app.runtime.current_workspace,
+        );
         // Get workspace tracker(borrow checker is really mad at me)
         let nw = app.runtime.screens[new_screen_index].current_workspace;
         // Add window to stack of another display
-        app.runtime.screens[new_screen_index].workspaces[nw]
-            .clients
-            .push(client);
+        // app.runtime.screens[new_screen_index].workspaces[nw]
+        //     .clients
+        //     .push(client);
+
+        let workspace = &mut app.runtime.screens[new_screen_index].workspaces[nw];
+
+        // 12. Add window to stack
+        workspace.current_client = Some(workspace.clients.len());
+        app.runtime.current_client = workspace.current_client;
+        workspace.clients.push(client);
 
         // Arrange all monitors
         arrange_visible(app);
@@ -148,12 +159,24 @@ pub fn move_to_workspace(app: &mut Application, n: u64) {
                 cc.h,
             );
             cc.visible = !cc.visible;
-            // Update tracker
-            shift_current_client(app, None, None);
+            // Update new trackers
+            // Update old trackers
+            shift_current_client(
+                app,
+                app.runtime.current_screen,
+                app.runtime.current_workspace,
+            );
             // Add client to choosen workspace (will be arranged later)
-            app.runtime.screens[app.runtime.current_screen].workspaces[n as usize]
-                .clients
-                .push(cc);
+            // app.runtime.screens[app.runtime.current_screen].workspaces[n as usize]
+            //     .clients
+            //     .push(cc);
+            let workspace =
+                &mut app.runtime.screens[app.runtime.current_screen].workspaces[n as usize];
+
+            // 12. Add window to stack
+            workspace.current_client = Some(workspace.clients.len());
+            app.runtime.current_client = workspace.current_client;
+            workspace.clients.push(cc);
             arrange_workspace(app, app.runtime.current_screen, n as usize);
         } else {
             pop_push_stack(app, true);
@@ -354,16 +377,17 @@ pub fn focus_on_screen_index(app: &mut Application, n: usize) {
             .clients[index]
             .window_id;
         log!("SETTING INPUT FOCUS");
-        set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
+        // set_input_focus(app.core.display, win, RevertToPointerRoot, CurrentTime);
+        focus(app, win);
     }
-    update_active_window(app);
-    if let Some(cw) = get_current_client_id(app) {
-        set_window_border(
-            app.core.display,
-            cw,
-            argb_to_int(app.config.active_border_color),
-        );
-    }
+    // update_active_window(app);
+    // if let Some(cw) = get_current_client_id(app) {
+    //     set_window_border(
+    //         app.core.display,
+    //         cw,
+    //         argb_to_int(app.config.active_border_color),
+    //     );
+    // }
     let w: u64 = n as u64 * config::NUMBER_OF_DESKTOPS as u64
         + app.runtime.screens[n].current_workspace as u64;
     change_property(

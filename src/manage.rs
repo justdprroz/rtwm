@@ -143,10 +143,10 @@ pub fn manage_client(app: &mut Application, win: u64, scan: bool) {
     let screen = &app.runtime.screens[client_screen];
     if c.floating {
         if c.x > screen.width as i32 {
-            c.x %= screen.x as i32;
+            c.x -= screen.x as i32;
         }
         if c.y > screen.height as i32 {
-            c.y %= screen.y as i32;
+            c.y -= screen.y as i32;
         }
     }
 
@@ -300,7 +300,7 @@ pub fn unmanage_window(app: &mut Application, win: u64) {
         log!("   |- Found window {} at indexes {}, {}, {}", win, s, w, c);
         // delete_property(app.core.display, win, app.atoms.net_wm_desktop);
         app.runtime.screens[s].workspaces[w].clients.remove(c);
-        shift_current_client(app, Some(s), Some(w));
+        shift_current_client(app, s, w);
 
         grab_server(app.core.display);
         select_input(app.core.display, win, x11::xlib::NoEventMask);
