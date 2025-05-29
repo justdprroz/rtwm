@@ -256,6 +256,7 @@ pub fn update_desktops(app: &mut Application) {
                     current_client: None,
                     master_capacity: 1,
                     master_width: mw,
+                    arrange: ArrangeEngine::Tiled,
                 });
             }
         }

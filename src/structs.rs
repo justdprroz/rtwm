@@ -55,16 +55,18 @@ pub enum ActionResult {
     // Screen management
     MoveToScreen(ScreenSwitching),
     FocusOnScreen(ScreenSwitching),
-    // Current layout management
-    UpdateMasterCapacity(i64),
-    UpdateMasterWidth(f64),
-    CycleStack(i64), // Simply moves focus
-    RotateStack,     // Pops and pushes LAST window
-    PopPushStack,    // Pops and pushes CURRENT window
-    ToggleFloat,
     // Workspace management
     MoveToWorkspace(u64),
     FocusOnWorkspace(u64),
+    SetArrangeEngine(ArrangeEngine),
+    // Tiled engine 
+    UpdateMasterCapacity(i64),
+    UpdateMasterWidth(f64),
+    RotateStack,     // Pops and pushes LAST window
+    PopPushStack,    // Pops and pushes CURRENT window
+    // Any Engine
+    ToggleFloat,
+    CycleStack(i64), // Simply moves focus
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -178,13 +180,20 @@ pub struct Screen {
     pub bar_offsets: BarOffsets,
 }
 
+#[derive(Debug, Clone)]
+pub enum ArrangeEngine {
+    Tiled,
+    Mono    
+}
+
 #[derive(Debug)]
 pub struct Workspace {
     pub number: u64,
-    pub master_capacity: i64,
-    pub master_width: f64,
     pub clients: Vec<Client>,
     pub current_client: Option<usize>,
+    pub master_capacity: i64,
+    pub master_width: f64,
+    pub arrange: ArrangeEngine,
 }
 
 #[derive(Debug, Default)]

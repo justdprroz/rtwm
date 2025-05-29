@@ -10,20 +10,13 @@ use crate::structs::*;
 use crate::utils::*;
 use crate::wrapper::xlib::*;
 
-/// Kill active window
-/// 1. Check if there is focused client
-/// 2. Ask client to close
-/// 3. Forcefully close client
 pub fn kill_client(app: &mut Application) {
-    // 1. Check
     if let Some(index) = app.runtime.current_client {
         let id = app.runtime.screens[app.runtime.current_screen].workspaces
             [app.runtime.current_workspace]
             .clients[index]
             .window_id;
-        // 2. Ask
         if !send_atom(app, id, app.atoms.wm_delete) {
-            // 3. Close
             grab_server(app.core.display);
             set_close_down_mode(app.core.display, DestroyAll);
             x_kill_client(app.core.display, id);
@@ -121,64 +114,63 @@ pub fn focus_on_screen(app: &mut Application, d: ScreenSwitching) {
     focus_on_screen_index(app, cs);
 }
 
+pub fn move_client_to_workspace(app: &mut Application, mut client: Client, n: u64) {
+    // 1. Unfocus this client
+    unfocus(app, client.window_id);
+
+    // 2. Move window out of view
+    move_resize_window(
+        app.core.display,
+        client.window_id,
+        -((client.w + client.border * 2) as i32),
+        -((client.h + client.border * 2) as i32),
+        client.w,
+        client.h,
+    );
+    client.visible = !client.visible;
+
+    // 3. Override client desktop
+    let cur_workspace: usize = n as usize + app.runtime.current_screen * config::NUMBER_OF_DESKTOPS;
+    update_client_desktop(app, client.window_id, cur_workspace as u64);
+
+    // 4. Add window to stack
+    let workspace = &mut app.runtime.screens[app.runtime.current_screen].workspaces[n as usize];
+
+    workspace.current_client = Some(workspace.clients.len());
+    app.runtime.current_client = workspace.current_client;
+    workspace.clients.push(client);
+    arrange_workspace(app, app.runtime.current_screen, n as usize);
+}
+
 pub fn move_to_workspace(app: &mut Application, n: u64) {
     log!("   |- Got `MoveToWorkspace` Action ");
-    // Check if moving to another workspace
     if let Some(index) = app.runtime.current_client {
         if n as usize != app.runtime.current_workspace {
-            // Check if any client is selected
-            // Pop current client
-            let mut cc = app.runtime.screens[app.runtime.current_screen].workspaces
+            // 1.Pop current client
+            let popped_client = app.runtime.screens[app.runtime.current_screen].workspaces
                 [app.runtime.current_workspace]
                 .clients
                 .remove(index);
-            set_window_border(
-                app.core.display,
-                cc.window_id,
-                argb_to_int(app.config.normal_border_color),
-            );
-            let cur_workspace: usize =
-                n as usize + app.runtime.current_screen * config::NUMBER_OF_DESKTOPS;
+            
+            // 3. Move popped client
+            move_client_to_workspace(app, popped_client, n);
 
-            update_client_desktop(app, cc.window_id, cur_workspace as u64);
-
-            // Update current workspace layout
+            // 4. Update current workspace
             arrange_visible(app);
             show_workspace(
                 app,
                 app.runtime.current_screen,
                 app.runtime.current_workspace,
             );
-            // Move window out of view
-            move_resize_window(
-                app.core.display,
-                cc.window_id,
-                -((cc.w + cc.border * 2) as i32),
-                -((cc.h + cc.border * 2) as i32),
-                cc.w,
-                cc.h,
-            );
-            cc.visible = !cc.visible;
-            // Update new trackers
-            // Update old trackers
+
+            // 5. Update current client index
             shift_current_client(
                 app,
                 app.runtime.current_screen,
                 app.runtime.current_workspace,
             );
-            // Add client to choosen workspace (will be arranged later)
-            // app.runtime.screens[app.runtime.current_screen].workspaces[n as usize]
-            //     .clients
-            //     .push(cc);
-            let workspace =
-                &mut app.runtime.screens[app.runtime.current_screen].workspaces[n as usize];
-
-            // 12. Add window to stack
-            workspace.current_client = Some(workspace.clients.len());
-            app.runtime.current_client = workspace.current_client;
-            workspace.clients.push(cc);
-            arrange_workspace(app, app.runtime.current_screen, n as usize);
         } else {
+            // Remap to another action
             pop_push_stack(app, true);
         }
     }
@@ -204,15 +196,24 @@ pub fn cycle_stack(app: &mut Application, d: i64) {
 
     unfocus(app, old_win);
     focus(app, new_win);
+    
+    raise_window(app.core.display, new_win);
+    suppress_notify_strict(app);
 }
 
 pub fn pop_push_stack(app: &mut Application, current: bool) {
+    let workspace = &mut app.runtime.screens[app.runtime.current_screen].workspaces
+        [app.runtime.current_workspace];
+
+    match workspace.arrange {
+        ArrangeEngine::Tiled => {}
+        _ => {
+            return;
+        }
+    }
+
     // No need to rotate single window;
-    if app.runtime.screens[app.runtime.current_screen].workspaces[app.runtime.current_workspace]
-        .clients
-        .len()
-        < 2
-    {
+    if workspace.clients.len() < 2 {
         return;
     }
 
@@ -225,10 +226,6 @@ pub fn pop_push_stack(app: &mut Application, current: bool) {
     } else {
         0
     };
-
-    // Universal logic
-    let workspace = &mut app.runtime.screens[app.runtime.current_screen].workspaces
-        [app.runtime.current_workspace];
 
     // Pop client (current or bottom)
     let popped_client = workspace.clients.remove(client_index);
@@ -248,6 +245,17 @@ pub fn pop_push_stack(app: &mut Application, current: bool) {
     );
 
     suppress_notify(app);
+
+    arrange_workspace(
+        app,
+        app.runtime.current_screen,
+        app.runtime.current_workspace,
+    );
+    show_workspace(
+        app,
+        app.runtime.current_screen,
+        app.runtime.current_workspace,
+    );
 }
 
 pub fn focus_on_workspace(app: &mut Application, n: u64, r: bool) {
@@ -304,10 +312,18 @@ pub fn focus_on_workspace(app: &mut Application, n: u64, r: bool) {
 }
 
 pub fn update_master_width(app: &mut Application, w: f64) {
+    let workspace = &mut app.runtime.screens[app.runtime.current_screen].workspaces
+        [app.runtime.current_workspace];
+
+    match workspace.arrange {
+        ArrangeEngine::Tiled => {}
+        _ => {
+            return;
+        }
+    }
+
     // Update master width
-    let mw = &mut app.runtime.screens[app.runtime.current_screen].workspaces
-        [app.runtime.current_workspace]
-        .master_width;
+    let mw = &mut workspace.master_width;
     if f64::abs(w) < *mw + w && *mw + w < 1.0 {
         *mw += w;
     }
@@ -322,9 +338,17 @@ pub fn update_master_width(app: &mut Application, w: f64) {
 }
 
 pub fn update_master_capacity(app: &mut Application, i: i64) {
+    let workspace = &mut app.runtime.screens[app.runtime.current_screen].workspaces
+        [app.runtime.current_workspace];
+
+    match workspace.arrange {
+        ArrangeEngine::Tiled => {}
+        _ => {
+            return;
+        }
+    }
     // Change master size
-    app.runtime.screens[app.runtime.current_screen].workspaces[app.runtime.current_workspace]
-        .master_capacity += i;
+    workspace.master_capacity += i;
     // Rearrange windows
     arrange_visible(app);
     show_workspace(

@@ -521,10 +521,7 @@ pub fn resize_client(dpy: &mut x11::xlib::Display, client: &mut Client) {
     configure(dpy, client);
 }
 
-pub fn suppress_notify(app: &mut Application) {
-    if !FOCUS_IGNORES_GEOMETRY {
-        return;
-    }
+pub fn suppress_notify_strict(app: &mut Application) {
     unsafe {
         XSync(app.core.display, 0);
         let mut ev = XEvent { type_: 0 };
@@ -532,6 +529,13 @@ pub fn suppress_notify(app: &mut Application) {
             log!("===Ignoring EnterEvent");
         }
     }
+}
+
+pub fn suppress_notify(app: &mut Application) {
+    if !FOCUS_IGNORES_GEOMETRY {
+        return;
+    }
+    suppress_notify_strict(app);
 }
 
 pub fn match_modifier(mod1: u32, mod2: u32) -> bool {

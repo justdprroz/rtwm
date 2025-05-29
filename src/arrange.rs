@@ -15,8 +15,27 @@ use crate::utils::*;
 /// 11. Update borders
 /// 12. Position windows
 pub fn arrange_workspace(app: &mut Application, screen: usize, workspace: usize) {
-    log!("======ARRANGING S: {}, W: {}", screen, workspace);
-    // 1. Get actual structures
+    let arrange_engine = {
+        let screen = &mut app.runtime.screens[screen];
+        let workspace = &mut screen.workspaces[workspace];
+
+        let stack_size = workspace.clients.iter().filter(|&c| !c.floating).count();
+
+        match workspace.arrange {
+            _ if stack_size == 0 => return,
+            _ if stack_size == 1 => ArrangeEngine::Mono,
+            ArrangeEngine::Tiled => ArrangeEngine::Tiled,
+            ArrangeEngine::Mono => ArrangeEngine::Mono,
+        }
+    };
+
+    match arrange_engine {
+        ArrangeEngine::Tiled => tiled(app, screen, workspace),
+        ArrangeEngine::Mono => mono(app, screen, workspace),
+    };
+}
+
+pub fn tiled(app: &mut Application, screen: usize, workspace: usize) {
     let screen = &mut app.runtime.screens[screen];
     let workspace = &mut screen.workspaces[workspace];
     // 2. Calculate usable screen sizes, gaps, borders etc
@@ -44,63 +63,63 @@ pub fn arrange_workspace(app: &mut Application, screen: usize, workspace: usize)
         .filter(|c| !c.floating && !c.fullscreen)
         .enumerate()
     {
-        // 6. Show maximized clients
-        if stack_size == 1 {
-            client.x = 0;
-            client.y = bar_offsets.up as i32;
-            client.w = screen.width as u32;
-            client.h = screen_height as u32;
-            client.border = 0;
-        } else {
-            if (index as i64) < master_capacity {
-                // 7. Show master clients
-                let win_height =
-                    (screen_height - gap as i64 - master_capacity * gap as i64) / master_capacity;
-                client.x = gap;
-                client.y = bar_offsets.up as i32 + gap + (win_height as i32 + gap) * index as i32;
-                client.w = master_width - 2 * border;
-                client.h = if index as i64 != master_capacity - 1 {
-                    win_height as u32 - 2 * border
-                } else {
-                    (screen_height as i32 - gap - client.y + bar_offsets.up as i32) as u32
-                        - 2 * border
-                };
+        if (index as i64) < master_capacity {
+            // 7. Show master clients
+            let win_height =
+                (screen_height - gap as i64 - master_capacity * gap as i64) / master_capacity;
+            client.x = gap;
+            client.y = bar_offsets.up as i32 + gap + (win_height as i32 + gap) * index as i32;
+            client.w = master_width - 2 * border;
+            client.h = if index as i64 != master_capacity - 1 {
+                win_height as u32 - 2 * border
             } else {
-                // 8. Show stack clients
-                let win_height = (screen_height
-                    - gap as i64
-                    - (stack_size as i64 - master_capacity) * gap as i64)
+                (screen_height as i32 - gap - client.y + bar_offsets.up as i32) as u32 - 2 * border
+            };
+        } else {
+            // 8. Show stack clients
+            let win_height =
+                (screen_height - gap as i64 - (stack_size as i64 - master_capacity) * gap as i64)
                     / (stack_size as i64 - master_capacity);
-                client.x = master_width as i32 + (gap * 2);
-                client.y = bar_offsets.up as i32
-                    + gap
-                    + (win_height as i32 + gap) * (index as i64 - master_capacity) as i32;
-                client.w = stack_width as u32 - 2 * border;
-                client.h = if index != stack_size - 1 {
-                    win_height as u32 - 2 * border
-                } else {
-                    (screen_height as i32 - gap - client.y + bar_offsets.up as i32) as u32
-                        - 2 * border
-                };
-            }
-            client.border = app.config.border_size as u32;
+            client.x = master_width as i32 + (gap * 2);
+            client.y = bar_offsets.up as i32
+                + gap
+                + (win_height as i32 + gap) * (index as i64 - master_capacity) as i32;
+            client.w = stack_width as u32 - 2 * border;
+            client.h = if index != stack_size - 1 {
+                win_height as u32 - 2 * border
+            } else {
+                (screen_height as i32 - gap - client.y + bar_offsets.up as i32) as u32 - 2 * border
+            };
         }
+        client.border = app.config.border_size as u32;
 
         client.x += screen.x as i32;
         client.y += screen.y as i32;
     }
 }
 
-//pub fn tiled(app: &mut Application) {
-//
-//}
+pub fn mono(app: &mut Application, screen: usize, workspace: usize) {
+    let screen = &mut app.runtime.screens[screen];
+    let workspace = &mut screen.workspaces[workspace];
 
-/// Arrange windows of current workspace in specified layout
-/// 1. Iterate over all screens
-/// 2. Arrange current workspace
+    let bar_offsets = screen.bar_offsets;
+    let screen_height = screen.height - (bar_offsets.up + bar_offsets.down) as i64;
+
+    for client in workspace
+        .clients
+        .iter_mut()
+        .filter(|c| !c.floating && !c.fullscreen && !c.fixed)
+    {
+        client.x = screen.x as i32;
+        client.y = screen.y as i32 + bar_offsets.up as i32;
+        client.w = screen.width as u32;
+        client.h = screen_height as u32;
+        client.border = 0;
+    }
+}
+
 pub fn arrange_visible(app: &mut Application) {
     log!("   |- Arranging...");
-    // 1. Iterate over all screens
     let screens_amount = app.runtime.screens.len();
     for index in 0..screens_amount {
         let current_workspace = app.runtime.screens[index].current_workspace;
@@ -108,10 +127,6 @@ pub fn arrange_visible(app: &mut Application) {
     }
 }
 
-/// Arrange all clients
-/// 1. Iterate over all screens
-/// 2. Iterate over all workspaces
-/// 3. Arrange it
 pub fn arrange_all(app: &mut Application) {
     let screens_amount = app.runtime.screens.len();
     for screen in 0..screens_amount {

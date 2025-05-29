@@ -85,6 +85,21 @@ pub fn key_press(app: &mut Application, key_event: XKeyEvent) {
                 ActionResult::RotateStack => {
                     pop_push_stack(app, false);
                 }
+                ActionResult::SetArrangeEngine(ae) => {
+                    app.runtime.screens[app.runtime.current_screen].workspaces
+                        [app.runtime.current_workspace]
+                        .arrange = ae.clone();
+                    arrange_workspace(
+                        app,
+                        app.runtime.current_screen,
+                        app.runtime.current_workspace,
+                    );
+                    show_workspace(
+                        app,
+                        app.runtime.current_screen,
+                        app.runtime.current_workspace,
+                    );
+                }
             }
         }
     }
