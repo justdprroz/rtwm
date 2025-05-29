@@ -46,8 +46,8 @@ pub fn arrange_workspace(app: &mut Application, screen: usize, workspace: usize)
     {
         // 6. Show maximized clients
         if stack_size == 1 {
-            client.x = screen.x as i32;
-            client.y = screen.y as i32 + bar_offsets.up as i32;
+            client.x = 0;
+            client.y = bar_offsets.up as i32;
             client.w = screen.width as u32;
             client.h = screen_height as u32;
             client.border = 0;
@@ -56,11 +56,8 @@ pub fn arrange_workspace(app: &mut Application, screen: usize, workspace: usize)
                 // 7. Show master clients
                 let win_height =
                     (screen_height - gap as i64 - master_capacity * gap as i64) / master_capacity;
-                client.x = gap + screen.x as i32;
-                client.y = bar_offsets.up as i32
-                    + gap
-                    + (win_height as i32 + gap) * index as i32
-                    + screen.y as i32;
+                client.x = gap;
+                client.y = bar_offsets.up as i32 + gap + (win_height as i32 + gap) * index as i32;
                 client.w = master_width - 2 * border;
                 client.h = if index as i64 != master_capacity - 1 {
                     win_height as u32 - 2 * border
@@ -74,11 +71,10 @@ pub fn arrange_workspace(app: &mut Application, screen: usize, workspace: usize)
                     - gap as i64
                     - (stack_size as i64 - master_capacity) * gap as i64)
                     / (stack_size as i64 - master_capacity);
-                client.x = master_width as i32 + (gap * 2) + screen.x as i32;
+                client.x = master_width as i32 + (gap * 2);
                 client.y = bar_offsets.up as i32
                     + gap
-                    + (win_height as i32 + gap) * (index as i64 - master_capacity) as i32
-                    + screen.y as i32;
+                    + (win_height as i32 + gap) * (index as i64 - master_capacity) as i32;
                 client.w = stack_width as u32 - 2 * border;
                 client.h = if index != stack_size - 1 {
                     win_height as u32 - 2 * border
@@ -90,8 +86,8 @@ pub fn arrange_workspace(app: &mut Application, screen: usize, workspace: usize)
             client.border = app.config.border_size as u32;
         }
 
-        // client.x += screen.x as i32;
-        // client.y += screen.y as i32;
+        client.x += screen.x as i32;
+        client.y += screen.y as i32;
     }
 }
 

@@ -9,6 +9,7 @@ use crate::utils::*;
 use crate::wrapper::xinerama::xinerama_query_screens;
 use crate::wrapper::xlib::*;
 
+use x11::xinerama::XineramaIsActive;
 use x11::xinerama::XineramaScreenInfo;
 use x11::xlib::AnyButton;
 use x11::xlib::AnyModifier;
@@ -158,10 +159,16 @@ pub fn update_trackers(app: &mut Application, win: u64) {
 pub fn update_screens(app: &mut Application) {
     // 1. Get screens
     let n = app.runtime.screens.len();
+
+    if unsafe { XineramaIsActive(app.core.display) } == 0 {
+        eprintln!("Running without xinerama is not supported");
+        exit(1);
+    }
+
     let screens = match xinerama_query_screens(app.core.display) {
         Some(s) => s,
         None => {
-            eprintln!("Running without xinerama is not supported");
+            eprintln!("xinerama error");
             exit(1);
         }
     };
